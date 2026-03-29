@@ -1,0 +1,81 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Person {
+  id               String             @id @default(cuid())
+  name             String
+  phone            String?
+  email            String?
+  address          String?
+  notes            String?
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+  cashTransactions CashTransaction[]
+  goldTransactions GoldTransaction[]
+
+  @@map("persons")
+}
+
+model CashLedger {
+  id        String   @id @default(cuid())
+  balance   Float    @default(0)
+  updatedAt DateTime @updatedAt
+
+  @@map("cash_ledger")
+}
+
+model CashTransaction {
+  id          String          @id @default(cuid())
+  personId    String
+  person      Person          @relation(fields: [personId], references: [id])
+  type        TransactionType
+  amount      Float
+  date        DateTime        @default(now())
+  notes       String?
+  billNumber  String?         @unique @default(cuid())
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  @@map("cash_transactions")
+}
+
+model GoldInventory {
+  id        String   @id @default(cuid())
+  carat     String   // "22k", "24k", "18k", etc.
+  weight    Float    @default(0) // in grams
+  updatedAt DateTime @updatedAt
+
+  @@unique([carat])
+  @@map("gold_inventory")
+}
+
+model GoldTransaction {
+  id         String          @id @default(cuid())
+  personId   String
+  person     Person          @relation(fields: [personId], references: [id])
+  type       TransactionType
+  carat      String
+  weight     Float           // in grams
+  ratePerGram Float?         // optional price per gram
+  totalValue Float?          // optional total value
+  date       DateTime        @default(now())
+  notes      String?
+  billNumber String?         @unique @default(cuid())
+  createdAt  DateTime        @default(now())
+  updatedAt  DateTime        @updatedAt
+
+  @@map("gold_transactions")
+}
+
+enum TransactionType {
+  LENT       // Money/Gold given out
+  RECEIVED   // Money/Gold received back
+  DEPOSIT    // Initial deposit / cash in
+  WITHDRAWAL // Cash out
+}
