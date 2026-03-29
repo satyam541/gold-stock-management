@@ -1,4 +1,4 @@
-export type TransactionType = "LENT" | "RECEIVED" | "DEPOSIT" | "WITHDRAWAL";
+export type TransactionType = string;
 
 export interface Person {
   id: string;
@@ -17,7 +17,7 @@ export interface CashTransaction {
   id: string;
   personId: string;
   person?: Person;
-  type: TransactionType;
+  type: string;
   amount: number;
   date: string;
   notes?: string | null;
@@ -37,7 +37,7 @@ export interface GoldTransaction {
   id: string;
   personId: string;
   person?: Person;
-  type: TransactionType;
+  type: string;
   carat: string;
   weight: number;
   ratePerGram?: number | null;
@@ -98,4 +98,23 @@ export interface BillData {
   companyName: string;
   companyPhone: string;
   companyAddress: string;
+}
+
+// ─── Dynamic module types ────────────────────────────────────
+
+export interface CaratOptionType {
+  id: string;
+  value: string;
+  label: string;
+  sortOrder: number;
+  isActive: boolean;
+}
+
+export interface TransactionTypeOption {
+  id: string;
+  value: string;
+  label: string;
+  color: string;
+  sortOrder: number;
+  isActive: boolean;
 }

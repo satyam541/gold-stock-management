@@ -1,81 +1,117 @@
 generator client {
-  provider = "prisma-client-js"
+    provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+    provider = "mysql"
+    url      = env("DATABASE_URL")
 }
 
 model Person {
-  id               String             @id @default(cuid())
-  name             String
-  phone            String?
-  email            String?
-  address          String?
-  notes            String?
-  createdAt        DateTime           @default(now())
-  updatedAt        DateTime           @updatedAt
-  cashTransactions CashTransaction[]
-  goldTransactions GoldTransaction[]
+    id               String            @id @default(cuid())
+    name             String
+    phone            String?
+    email            String?
+    address          String?           @db.Text
+    notes            String?           @db.Text
+    createdAt        DateTime          @default(now())
+    updatedAt        DateTime          @updatedAt
+    cashTransactions CashTransaction[]
+    goldTransactions GoldTransaction[]
 
-  @@map("persons")
+    @@map("persons")
 }
 
 model CashLedger {
-  id        String   @id @default(cuid())
-  balance   Float    @default(0)
-  updatedAt DateTime @updatedAt
+    id        String   @id @default(cuid())
+    balance   Float    @default(0)
+    updatedAt DateTime @updatedAt
 
-  @@map("cash_ledger")
+    @@map("cash_ledger")
 }
 
 model CashTransaction {
-  id          String          @id @default(cuid())
-  personId    String
-  person      Person          @relation(fields: [personId], references: [id])
-  type        TransactionType
-  amount      Float
-  date        DateTime        @default(now())
-  notes       String?
-  billNumber  String?         @unique @default(cuid())
-  createdAt   DateTime        @default(now())
-  updatedAt   DateTime        @updatedAt
+    id         String   @id @default(cuid())
+    personId   String
+    person     Person   @relation(fields: [personId], references: [id])
+    type       String // Dynamic: references transaction_types.value
+    amount     Float
+    date       DateTime @default(now())
+    notes      String?  @db.Text
+    billNumber String?  @unique @default(cuid())
+    createdAt  DateTime @default(now())
+    updatedAt  DateTime @updatedAt
 
-  @@map("cash_transactions")
+    @@index([personId])
+    @@index([type])
+    @@index([date])
+    @@map("cash_transactions")
 }
 
 model GoldInventory {
-  id        String   @id @default(cuid())
-  carat     String   // "22k", "24k", "18k", etc.
-  weight    Float    @default(0) // in grams
-  updatedAt DateTime @updatedAt
+    id        String   @id @default(cuid())
+    carat     String // Dynamic: references carat_options.value
+    weight    Float    @default(0)
+    updatedAt DateTime @updatedAt
 
-  @@unique([carat])
-  @@map("gold_inventory")
+    @@unique([carat])
+    @@map("gold_inventory")
 }
 
 model GoldTransaction {
-  id         String          @id @default(cuid())
-  personId   String
-  person     Person          @relation(fields: [personId], references: [id])
-  type       TransactionType
-  carat      String
-  weight     Float           // in grams
-  ratePerGram Float?         // optional price per gram
-  totalValue Float?          // optional total value
-  date       DateTime        @default(now())
-  notes      String?
-  billNumber String?         @unique @default(cuid())
-  createdAt  DateTime        @default(now())
-  updatedAt  DateTime        @updatedAt
+    id          String   @id @default(cuid())
+    personId    String
+    person      Person   @relation(fields: [personId], references: [id])
+    type        String // Dynamic: references transaction_types.value
+    carat       String // Dynamic: references carat_options.value
+    weight      Float
+    ratePerGram Float?
+    totalValue  Float?
+    date        DateTime @default(now())
+    notes       String?  @db.Text
+    billNumber  String?  @unique @default(cuid())
+    createdAt   DateTime @default(now())
+    updatedAt   DateTime @updatedAt
 
-  @@map("gold_transactions")
+    @@index([personId])
+    @@index([type])
+    @@index([carat])
+    @@index([date])
+    @@map("gold_transactions")
 }
 
-enum TransactionType {
-  LENT       // Money/Gold given out
-  RECEIVED   // Money/Gold received back
-  DEPOSIT    // Initial deposit / cash in
-  WITHDRAWAL // Cash out
+// ─── Dynamic Module Config ───────────────────────────────────────
+
+model CaratOption {
+    id        String   @id @default(cuid())
+    value     String   @unique // e.g. "22k"
+    label     String // e.g. "22 Karat"
+    sortOrder Int      @default(0)
+    isActive  Boolean  @default(true)
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    @@map("carat_options")
+}
+
+model TransactionTypeOption {
+    id        String   @id @default(cuid())
+    value     String   @unique // e.g. "LENT"
+    label     String // e.g. "Lent Out"
+    color     String   @default("#6b7280") // badge color
+    sortOrder Int      @default(0)
+    isActive  Boolean  @default(true)
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    @@map("transaction_types")
+}
+
+model AppSetting {
+    id        String   @id @default(cuid())
+    key       String   @unique // e.g. "company_name", "company_phone"
+    value     String   @db.Text
+    updatedAt DateTime @updatedAt
+
+    @@map("app_settings")
 }

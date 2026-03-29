@@ -66,7 +66,8 @@ export function generateBillNumber(): string {
   return `BILL-${year}${month}${day}-${random}`;
 }
 
-export const CARAT_OPTIONS = [
+// Fallback defaults (used only when DB is empty / first load)
+export const DEFAULT_CARAT_OPTIONS = [
   { value: "24k", label: "24 Karat (Pure Gold)" },
   { value: "22k", label: "22 Karat" },
   { value: "21k", label: "21 Karat" },
@@ -74,9 +75,43 @@ export const CARAT_OPTIONS = [
   { value: "14k", label: "14 Karat" },
 ];
 
-export const TRANSACTION_TYPES = [
+export const DEFAULT_TRANSACTION_TYPES = [
   { value: "LENT", label: "Lent Out" },
   { value: "RECEIVED", label: "Received" },
   { value: "DEPOSIT", label: "Deposit" },
   { value: "WITHDRAWAL", label: "Withdrawal" },
 ];
+
+// Badge class helper — works with any dynamic type value
+const BADGE_MAP: Record<string, string> = {
+  LENT: "badge-lent",
+  RECEIVED: "badge-received",
+  DEPOSIT: "badge-deposit",
+  WITHDRAWAL: "badge-withdrawal",
+};
+
+export function getTransactionBadgeClassDynamic(
+  type: string,
+  transactionTypes: { value: string; color: string }[]
+): string {
+  // Check built-in badges first
+  if (BADGE_MAP[type]) return BADGE_MAP[type];
+  // For custom types, use inline style via color
+  return "badge-custom";
+}
+
+export function getTransactionColor(
+  type: string,
+  transactionTypes: { value: string; color: string }[]
+): string {
+  const found = transactionTypes.find((t) => t.value === type);
+  return found?.color || "#6b7280";
+}
+
+export function getTransactionLabelDynamic(
+  type: string,
+  transactionTypes: { value: string; label: string }[]
+): string {
+  const found = transactionTypes.find((t) => t.value === type);
+  return found?.label || type;
+}
