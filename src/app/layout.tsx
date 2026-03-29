@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
 import { Outfit, Playfair_Display, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
-import Sidebar from "@/components/layout/Sidebar";
-import Header from "@/components/layout/Header";
 import NavigationProgress from "@/components/ui/NavigationProgress";
 import { Toaster } from "react-hot-toast";
+import AuthProvider from "@/components/providers/AuthProvider";
+import AppShell from "@/components/layout/AppShell";
 
 const outfit = Outfit({
     subsets: ["latin"],
@@ -38,34 +38,30 @@ export default function RootLayout({
             <body
                 className={`${outfit.variable} ${playfair.variable} ${jetbrains.variable} antialiased`}
             >
-                <NavigationProgress />
-                <Toaster
-                    position="top-right"
-                    toastOptions={{
-                        duration: 3000,
-                        style: {
-                            background: "hsl(var(--card))",
-                            color: "hsl(var(--card-foreground))",
-                            border: "1px solid hsl(var(--border))",
-                            borderRadius: "0.75rem",
-                            fontSize: "0.875rem",
-                            boxShadow: "0 10px 15px -3px rgba(0,0,0,0.1)",
-                        },
-                        success: {
-                            iconTheme: { primary: "#22c55e", secondary: "#fff" },
-                        },
-                        error: {
-                            iconTheme: { primary: "#ef4444", secondary: "#fff" },
-                        },
-                    }}
-                />
-                <div className="flex min-h-screen">
-                    <Sidebar />
-                    <div className="flex flex-1 flex-col pl-64">
-                        <Header />
-                        <main className="flex-1 p-6">{children}</main>
-                    </div>
-                </div>
+                <AuthProvider>
+                    <NavigationProgress />
+                    <Toaster
+                        position="top-right"
+                        toastOptions={{
+                            duration: 3000,
+                            style: {
+                                background: "hsl(var(--card))",
+                                color: "hsl(var(--card-foreground))",
+                                border: "1px solid hsl(var(--border))",
+                                borderRadius: "0.75rem",
+                                fontSize: "0.875rem",
+                                boxShadow: "0 10px 15px -3px rgba(0,0,0,0.1)",
+                            },
+                            success: {
+                                iconTheme: { primary: "#22c55e", secondary: "#fff" },
+                            },
+                            error: {
+                                iconTheme: { primary: "#ef4444", secondary: "#fff" },
+                            },
+                        }}
+                    />
+                    <AppShell>{children}</AppShell>
+                </AuthProvider>
             </body>
         </html>
     );

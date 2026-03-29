@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useSession, signOut } from "next-auth/react";
 import {
     LayoutDashboard,
     Banknote,
@@ -9,9 +10,10 @@ import {
     Users,
     ArrowLeftRight,
     BarChart3,
-    FileText,
     Settings,
     TrendingUp,
+    UserCog,
+    LogOut,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -25,8 +27,17 @@ const navItems = [
     { href: "/settings", icon: Settings, label: "Settings" },
 ];
 
+const adminItems = [
+    { href: "/users", icon: UserCog, label: "Users" },
+];
+
 export default function Sidebar() {
     const pathname = usePathname();
+    const { data: session } = useSession();
+
+    const isAdmin = session?.user?.role === "admin";
+    const userName = session?.user?.name || "User";
+    const userRole = isAdmin ? "Admin" : "User";
 
     return (
         <aside className="fixed inset-y-0 left-0 z-50 flex w-64 flex-col border-r border-border bg-card">
@@ -64,20 +75,48 @@ export default function Sidebar() {
                         </Link>
                     );
                 })}
+
+                {isAdmin && (
+                    <>
+                        <p className="mb-2 mt-4 px-3 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
+                            Administration
+                        </p>
+                        {adminItems.map((item) => {
+                            const isActive = pathname.startsWith(item.href);
+                            return (
+                                <Link
+                                    key={item.href}
+                                    href={item.href}
+                                    className={cn("sidebar-link", isActive && "active")}
+                                >
+                                    <item.icon className="h-4 w-4 shrink-0" />
+                                    <span>{item.label}</span>
+                                </Link>
+                            );
+                        })}
+                    </>
+                )}
             </nav>
 
-            {/* Bottom */}
+            {/* Bottom - User Info */}
             <div className="border-t border-border p-4">
                 <div className="flex items-center gap-3 rounded-lg bg-muted/50 px-3 py-2">
                     <div className="flex h-8 w-8 items-center justify-center rounded-full gold-gradient text-xs font-bold text-white">
-                        A
+                        {userName.charAt(0).toUpperCase()}
                     </div>
                     <div className="min-w-0 flex-1">
-                        <p className="truncate text-sm font-medium">Admin</p>
+                        <p className="truncate text-sm font-medium">{userName}</p>
                         <p className="truncate text-xs text-muted-foreground">
-                            Asset Manager
+                            {userRole}
                         </p>
                     </div>
+                    <button
+                        onClick={() => signOut({ callbackUrl: "/login" })}
+                        className="flex h-7 w-7 items-center justify-center rounded-md hover:bg-destructive/10 hover:text-destructive transition-colors"
+                        title="Sign out"
+                    >
+                        <LogOut className="h-3.5 w-3.5" />
+                    </button>
                 </div>
             </div>
         </aside>

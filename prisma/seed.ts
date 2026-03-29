@@ -1,4 +1,5 @@
 import { PrismaClient } from "@prisma/client";
+import bcrypt from "bcryptjs";
 
 const prisma = new PrismaClient();
 
@@ -55,6 +56,25 @@ async function main() {
       update: { value: s.value },
     });
   }
+
+  // ─── Seed Default Admin User ────────────────────────
+
+  const adminPassword = await bcrypt.hash("admin123", 12);
+  await prisma.user.upsert({
+    where: { email: "admin@assetflow.pk" },
+    create: {
+      name: "Admin",
+      email: "admin@assetflow.pk",
+      password: adminPassword,
+      role: "admin",
+      isActive: true,
+    },
+    update: {
+      name: "Admin",
+      password: adminPassword,
+      role: "admin",
+    },
+  });
 
   // ─── Seed Business Data ─────────────────────────────
 
@@ -172,6 +192,7 @@ async function main() {
   }
 
   console.log("✅ Seeding complete!");
+  console.log(`   Created default admin user (admin@assetflow.pk / admin123)`);
   console.log(`   Created ${caratData.length} carat options`);
   console.log(`   Created ${typeData.length} transaction types`);
   console.log(`   Created ${settings.length} app settings`);

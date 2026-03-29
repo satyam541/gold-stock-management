@@ -1,13 +1,13 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { Plus, Trash2, Save, Gem, ArrowLeftRight, Building2, GripVertical } from "lucide-react";
+import { Plus, Trash2, Save, Gem, ArrowLeftRight, Building2, GripVertical, Mail, Loader2, Send } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { CaratOptionType, TransactionTypeOption } from "@/types";
 import toast from "react-hot-toast";
 
 export default function SettingsPage() {
-    const [activeTab, setActiveTab] = useState<"carats" | "types" | "company">("carats");
+    const [activeTab, setActiveTab] = useState<"carats" | "types" | "company" | "smtp">("carats");
 
     // ─── Carat Options ──────────────────────────────────
     const [carats, setCarats] = useState<CaratOptionType[]>([]);
@@ -180,10 +180,78 @@ export default function SettingsPage() {
         }
     };
 
+    // ─── SMTP Settings ──────────────────────────────────
+    const [smtp, setSmtp] = useState({
+        smtp_host: "",
+        smtp_port: "587",
+        smtp_user: "",
+        smtp_pass: "",
+        smtp_from_email: "",
+        smtp_from_name: "",
+        smtp_encryption: "tls",
+    });
+    const [smtpSaving, setSmtpSaving] = useState(false);
+    const [smtpTesting, setSmtpTesting] = useState(false);
+
+    useEffect(() => {
+        fetch("/api/settings/smtp")
+            .then((r) => r.json())
+            .then((data) => {
+                if (data && typeof data === "object" && !data.error) {
+                    setSmtp((prev) => ({ ...prev, ...data }));
+                }
+            })
+            .catch(() => { });
+    }, []);
+
+    const saveSmtp = async () => {
+        setSmtpSaving(true);
+        try {
+            const res = await fetch("/api/settings/smtp", {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(smtp),
+            });
+            if (res.ok) {
+                toast.success("SMTP settings saved successfully!");
+            } else {
+                toast.error("Failed to save SMTP settings.");
+            }
+        } finally {
+            setSmtpSaving(false);
+        }
+    };
+
+    const testSmtp = async () => {
+        if (!smtp.smtp_host || !smtp.smtp_port) {
+            toast.error("SMTP host and port are required for testing.");
+            return;
+        }
+        setSmtpTesting(true);
+        try {
+            const res = await fetch("/api/settings/smtp", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(smtp),
+            });
+            const data = await res.json();
+            if (res.ok) {
+                toast.success(data.message || "Test email sent successfully!");
+            } else {
+                toast.error(data.error || "SMTP test failed.");
+            }
+        } catch {
+            toast.error("Failed to test SMTP connection.");
+        } finally {
+            setSmtpTesting(false);
+        }
+    };
+
     const tabs = [
         { key: "carats" as const, label: "Carat Options", icon: Gem },
         { key: "types" as const, label: "Transaction Types", icon: ArrowLeftRight },
         { key: "company" as const, label: "Company Info", icon: Building2 },
+        { key: "smtp" as const, label: "Email / SMTP", icon: Mail },
     ];
 
     return (
@@ -459,6 +527,123 @@ export default function SettingsPage() {
                             <Save className="h-4 w-4" />
                             {companySaving ? "Saving..." : "Save Settings"}
                         </button>
+                    </div>
+                </div>
+            )}
+
+            {/* ── SMTP / Email Tab ── */}
+            {activeTab === "smtp" && (
+                <div className="rounded-xl border border-border bg-card p-6 max-w-xl">
+                    <h3 className="font-display text-lg font-semibold mb-1">Email / SMTP Configuration</h3>
+                    <p className="text-xs text-muted-foreground mb-5">
+                        Configure your outgoing email server for password resets and notifications.
+                    </p>
+
+                    <div className="space-y-4">
+                        <div className="grid gap-4 sm:grid-cols-2">
+                            <div>
+                                <label className="block text-xs font-medium text-muted-foreground mb-1.5">SMTP Host</label>
+                                <input
+                                    type="text"
+                                    value={smtp.smtp_host}
+                                    onChange={(e) => setSmtp({ ...smtp, smtp_host: e.target.value })}
+                                    placeholder="smtp.gmail.com"
+                                    className="w-full h-9 rounded-lg border border-border bg-muted/30 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-xs font-medium text-muted-foreground mb-1.5">SMTP Port</label>
+                                <input
+                                    type="text"
+                                    value={smtp.smtp_port}
+                                    onChange={(e) => setSmtp({ ...smtp, smtp_port: e.target.value })}
+                                    placeholder="587"
+                                    className="w-full h-9 rounded-lg border border-border bg-muted/30 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+                                />
+                            </div>
+                        </div>
+
+                        <div>
+                            <label className="block text-xs font-medium text-muted-foreground mb-1.5">Encryption</label>
+                            <select
+                                value={smtp.smtp_encryption}
+                                onChange={(e) => setSmtp({ ...smtp, smtp_encryption: e.target.value })}
+                                className="w-full h-9 rounded-lg border border-border bg-muted/30 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+                            >
+                                <option value="tls">TLS (Port 587)</option>
+                                <option value="ssl">SSL (Port 465)</option>
+                                <option value="none">None (Port 25)</option>
+                            </select>
+                        </div>
+
+                        <div className="grid gap-4 sm:grid-cols-2">
+                            <div>
+                                <label className="block text-xs font-medium text-muted-foreground mb-1.5">Username</label>
+                                <input
+                                    type="text"
+                                    value={smtp.smtp_user}
+                                    onChange={(e) => setSmtp({ ...smtp, smtp_user: e.target.value })}
+                                    placeholder="your@email.com"
+                                    className="w-full h-9 rounded-lg border border-border bg-muted/30 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-xs font-medium text-muted-foreground mb-1.5">Password</label>
+                                <input
+                                    type="password"
+                                    value={smtp.smtp_pass}
+                                    onChange={(e) => setSmtp({ ...smtp, smtp_pass: e.target.value })}
+                                    placeholder="App password or SMTP password"
+                                    className="w-full h-9 rounded-lg border border-border bg-muted/30 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+                                />
+                            </div>
+                        </div>
+
+                        <div className="border-t border-border pt-4 mt-2">
+                            <p className="text-xs font-medium text-muted-foreground mb-3">Sender Information</p>
+                        </div>
+
+                        <div className="grid gap-4 sm:grid-cols-2">
+                            <div>
+                                <label className="block text-xs font-medium text-muted-foreground mb-1.5">From Name</label>
+                                <input
+                                    type="text"
+                                    value={smtp.smtp_from_name}
+                                    onChange={(e) => setSmtp({ ...smtp, smtp_from_name: e.target.value })}
+                                    placeholder="AssetFlow"
+                                    className="w-full h-9 rounded-lg border border-border bg-muted/30 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-xs font-medium text-muted-foreground mb-1.5">From Email</label>
+                                <input
+                                    type="email"
+                                    value={smtp.smtp_from_email}
+                                    onChange={(e) => setSmtp({ ...smtp, smtp_from_email: e.target.value })}
+                                    placeholder="noreply@assetflow.pk"
+                                    className="w-full h-9 rounded-lg border border-border bg-muted/30 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+                                />
+                            </div>
+                        </div>
+
+                        <div className="flex items-center gap-3 pt-2">
+                            <button
+                                onClick={saveSmtp}
+                                disabled={smtpSaving}
+                                className="flex items-center gap-2 rounded-lg bg-primary px-5 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50"
+                            >
+                                {smtpSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                                {smtpSaving ? "Saving..." : "Save SMTP Settings"}
+                            </button>
+                            <button
+                                onClick={testSmtp}
+                                disabled={smtpTesting}
+                                className="flex items-center gap-2 rounded-lg border border-border px-5 py-2 text-sm font-medium hover:bg-muted transition-colors disabled:opacity-50"
+                            >
+                                {smtpTesting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                                {smtpTesting ? "Sending..." : "Send Test Email"}
+                            </button>
+                        </div>
                     </div>
                 </div>
             )}

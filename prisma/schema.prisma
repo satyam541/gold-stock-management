@@ -80,6 +80,36 @@ model GoldTransaction {
     @@map("gold_transactions")
 }
 
+// ─── Authentication ──────────────────────────────────────────────
+
+model User {
+    id                  String               @id @default(cuid())
+    name                String
+    email               String               @unique
+    password            String
+    role                String               @default("user") // admin, user
+    isActive            Boolean              @default(true)
+    createdAt           DateTime             @default(now())
+    updatedAt           DateTime             @updatedAt
+    passwordResetTokens PasswordResetToken[]
+
+    @@map("users")
+}
+
+model PasswordResetToken {
+    id        String   @id @default(cuid())
+    token     String   @unique
+    userId    String
+    user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+    expiresAt DateTime
+    used      Boolean  @default(false)
+    createdAt DateTime @default(now())
+
+    @@index([token])
+    @@index([userId])
+    @@map("password_reset_tokens")
+}
+
 // ─── Dynamic Module Config ───────────────────────────────────────
 
 model CaratOption {
