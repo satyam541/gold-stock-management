@@ -1,12 +1,14 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { ArrowLeft, Phone, Mail, MapPin, Banknote, Gem, Printer, Trash2, Pencil, Plus } from "lucide-react";
 import Link from "next/link";
 import { Person, CashTransaction, GoldTransaction } from "@/types";
 import { formatCurrency, formatDate, formatWeight, getTransactionLabel } from "@/lib/utils";
 import toast from "react-hot-toast";
+import { useDataTable } from "@/hooks/useDataTable";
+import { DataTableHeader, DataTableFooter } from "@/components/ui/DataTableControls";
 
 interface PersonDetail extends Person {
     cashTransactions: CashTransaction[];
@@ -78,16 +80,6 @@ export default function PersonDetailPage() {
             .catch(() => setGoldLedgerEntries([]));
     }, [params.id]);
 
-    if (loading) return <div className="flex items-center justify-center h-64 text-muted-foreground">Loading...</div>;
-    if (!person) return <div className="text-muted-foreground p-4">Person not found.</div>;
-
-    const totalCash = person.cashTransactions.reduce((sum, t) => {
-        return t.type === "RECEIVED" || t.type === "DEPOSIT" ? sum + t.amount : sum - t.amount;
-    }, 0);
-    const totalGold = person.goldTransactions.reduce((sum, t) => {
-        return t.type === "RECEIVED" || t.type === "DEPOSIT" ? sum + t.weight : sum - t.weight;
-    }, 0);
-
     type UnifiedRow = {
         id: string;
         source: "Cash" | "Gold" | "GoldLedger";
@@ -103,50 +95,82 @@ export default function PersonDetailPage() {
         invoiceUrl?: string;
     };
 
-    const combinedEntries: UnifiedRow[] = [
-        ...person.cashTransactions.map((tx) => ({
-            id: tx.id,
-            source: "Cash" as const,
-            date: tx.date,
-            particulars: `Cash ${getTransactionLabel(tx.type)}`,
-            type: tx.type,
-            cashIssued: tx.type === "RECEIVED" || tx.type === "DEPOSIT" ? 0 : tx.amount,
-            cashReceipt: tx.type === "RECEIVED" || tx.type === "DEPOSIT" ? tx.amount : 0,
-            goldIssued: 0,
-            goldReceipt: 0,
-            drcr: tx.type === "RECEIVED" || tx.type === "DEPOSIT" ? "DR" : "CR",
-            notes: tx.notes,
-            invoiceUrl: tx.billNumber ? `/bill/${tx.id}?type=cash` : undefined,
-        })),
-        ...person.goldTransactions.map((tx) => ({
-            id: tx.id,
-            source: "Gold" as const,
-            date: tx.date,
-            particulars: `${tx.carat} / ${formatWeight(tx.weight)}${tx.ratePerGram ? ` @ ${formatCurrency(tx.ratePerGram)}` : ""}`,
-            type: tx.type,
-            cashIssued: 0,
-            cashReceipt: 0,
-            goldIssued: tx.type === "RECEIVED" || tx.type === "DEPOSIT" ? 0 : tx.weight,
-            goldReceipt: tx.type === "RECEIVED" || tx.type === "DEPOSIT" ? tx.weight : 0,
-            drcr: tx.type === "RECEIVED" || tx.type === "DEPOSIT" ? "DR" : "CR",
-            notes: tx.notes,
-            invoiceUrl: tx.billNumber ? `/bill/${tx.id}?type=gold` : undefined,
-        })),
-        ...goldLedgerEntries.map((e) => ({
-            id: e.id,
-            source: "GoldLedger" as const,
-            date: e.date,
-            particulars: `${formatWeight(e.finalWeight)} (gross ${formatWeight(e.grossWeight)}, purity ${e.purity}%)`,
-            type: e.type,
-            cashIssued: 0,
-            cashReceipt: 0,
-            goldIssued: e.type === "GIVEN" || e.type === "SALE" ? e.finalWeight : 0,
-            goldReceipt: e.type === "GIVEN" || e.type === "SALE" ? 0 : e.finalWeight,
-            drcr: e.type === "GIVEN" || e.type === "SALE" ? "CR" : "DR",
-            notes: e.notes,
-            invoiceUrl: undefined,
-        })),
-    ].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+    const combinedEntries: UnifiedRow[] = useMemo(() => {
+        if (!person) return [];
+        return [
+            ...person.cashTransactions.map((tx) => ({
+                id: tx.id,
+                source: "Cash" as const,
+                date: tx.date,
+                particulars: `Cash ${getTransactionLabel(tx.type)}`,
+                type: tx.type,
+                cashIssued: tx.type === "RECEIVED" || tx.type === "DEPOSIT" ? 0 : tx.amount,
+                cashReceipt: tx.type === "RECEIVED" || tx.type === "DEPOSIT" ? tx.amount : 0,
+                goldIssued: 0,
+                goldReceipt: 0,
+                drcr: tx.type === "RECEIVED" || tx.type === "DEPOSIT" ? "DR" : "CR",
+                notes: tx.notes,
+                invoiceUrl: tx.billNumber ? `/bill/${tx.id}?type=cash` : undefined,
+            })),
+            ...person.goldTransactions.map((tx) => ({
+                id: tx.id,
+                source: "Gold" as const,
+                date: tx.date,
+                particulars: `${tx.carat} / ${formatWeight(tx.weight)}${tx.ratePerGram ? ` @ ${formatCurrency(tx.ratePerGram)}` : ""}`,
+                type: tx.type,
+                cashIssued: 0,
+                cashReceipt: 0,
+                goldIssued: tx.type === "RECEIVED" || tx.type === "DEPOSIT" ? 0 : tx.weight,
+                goldReceipt: tx.type === "RECEIVED" || tx.type === "DEPOSIT" ? tx.weight : 0,
+                drcr: tx.type === "RECEIVED" || tx.type === "DEPOSIT" ? "DR" : "CR",
+                notes: tx.notes,
+                invoiceUrl: tx.billNumber ? `/bill/${tx.id}?type=gold` : undefined,
+            })),
+            ...goldLedgerEntries.map((e) => ({
+                id: e.id,
+                source: "GoldLedger" as const,
+                date: e.date,
+                particulars: `${formatWeight(e.finalWeight)} (gross ${formatWeight(e.grossWeight)}, purity ${e.purity}%)`,
+                type: e.type,
+                cashIssued: 0,
+                cashReceipt: 0,
+                goldIssued: e.type === "GIVEN" || e.type === "SALE" ? e.finalWeight : 0,
+                goldReceipt: e.type === "GIVEN" || e.type === "SALE" ? 0 : e.finalWeight,
+                drcr: e.type === "GIVEN" || e.type === "SALE" ? "CR" : "DR",
+                notes: e.notes,
+                invoiceUrl: undefined,
+            })),
+        ].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+    }, [person, goldLedgerEntries]);
+
+    // Pre-compute running balances in chronological order, then reverse for newest-first display
+    const entriesWithBalances = useMemo(() => {
+        let runningCash = 0;
+        let runningGold = 0;
+        const withBal = combinedEntries.map((row) => {
+            runningCash += row.cashReceipt - row.cashIssued;
+            runningGold += row.goldReceipt - row.goldIssued;
+            return { ...row, runningCash, runningGold };
+        });
+        return withBal.reverse();
+    }, [combinedEntries]);
+
+    const dt = useDataTable(entriesWithBalances, {
+        searchFn: (row, q) => {
+            const s = [row.particulars, row.source, row.type, row.drcr, row.notes].filter(Boolean).join(" ").toLowerCase();
+            return s.includes(q);
+        },
+    });
+
+    if (loading) return <div className="flex items-center justify-center h-64 text-muted-foreground">Loading...</div>;
+    if (!person) return <div className="text-muted-foreground p-4">Person not found.</div>;
+
+    const totalCash = person.cashTransactions.reduce((sum, t) => {
+        return t.type === "RECEIVED" || t.type === "DEPOSIT" ? sum + t.amount : sum - t.amount;
+    }, 0);
+    const totalGold = person.goldTransactions.reduce((sum, t) => {
+        return t.type === "RECEIVED" || t.type === "DEPOSIT" ? sum + t.weight : sum - t.weight;
+    }, 0);
 
     const ledgerCalc = (() => {
         const gross = Number(ledgerForm.grossWeight) || 0;
@@ -349,6 +373,7 @@ export default function PersonDetailPage() {
                     <Plus className="h-3.5 w-3.5" /> Add Gold Ledger Entry
                 </button>
             </div>
+            <DataTableHeader search={dt.search} onSearchChange={dt.setSearch} pageSize={dt.pageSize} onPageSizeChange={dt.setPageSize} />
             <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                     <thead>
@@ -359,78 +384,69 @@ export default function PersonDetailPage() {
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-border">
-                        {combinedEntries.length === 0 ? (
+                        {dt.data.length === 0 ? (
                             <tr><td colSpan={11} className="px-4 py-8 text-center text-muted-foreground">No transactions available</td></tr>
-                        ) : (() => {
-                            let runningCash = 0;
-                            let runningGold = 0;
-
-                            return (
-                                <>
-                                    {combinedEntries.map((row) => {
-                                        runningCash += row.cashReceipt - row.cashIssued;
-                                        runningGold += row.goldReceipt - row.goldIssued;
-
-                                        return (
-                                            <tr key={`${row.source}-${row.id}`} className="table-row-hover">
-                                                <td className="px-3 py-2 whitespace-nowrap text-muted-foreground">{formatDate(row.date)}</td>
-                                                <td className="px-3 py-2 font-mono">{row.particulars}</td>
-                                                <td className="px-3 py-2">{row.source}</td>
-                                                <td className="px-3 py-2">{row.type}</td>
-                                                <td className="px-3 py-2 text-right font-mono">{row.cashIssued ? formatCurrency(row.cashIssued) : row.goldIssued ? formatWeight(row.goldIssued) : "-"}</td>
-                                                <td className="px-3 py-2 text-right font-mono">{row.cashReceipt ? formatCurrency(row.cashReceipt) : row.goldReceipt ? formatWeight(row.goldReceipt) : "-"}</td>
-                                                <td className="px-3 py-2 font-mono font-semibold">{row.drcr}</td>
-                                                <td className="px-3 py-2 font-mono font-semibold">{formatCurrency(runningCash)}</td>
-                                                <td className="px-3 py-2 font-mono font-semibold">{formatWeight(runningGold)}</td>
-                                                <td className="px-3 py-2 text-muted-foreground max-w-[160px] truncate">{row.notes || "—"}</td>
-                                                <td className="px-3 py-2">
-                                                    {row.source === "GoldLedger" ? (
-                                                        <div className="flex items-center gap-1">
-                                                            <button
-                                                                onClick={() => {
-                                                                    const entry = goldLedgerEntries.find((e) => e.id === row.id);
-                                                                    if (entry) editLedgerEntry(entry);
-                                                                }}
-                                                                className="flex h-7 w-7 items-center justify-center rounded-md border border-border hover:bg-muted transition-colors"
-                                                                title="Edit"
-                                                            >
-                                                                <Pencil className="h-3.5 w-3.5" />
-                                                            </button>
-                                                            <button
-                                                                onClick={() => deleteLedgerEntry(row.id)}
-                                                                className="flex h-7 w-7 items-center justify-center rounded-md border border-border hover:bg-destructive/10 hover:text-destructive transition-colors"
-                                                                title="Delete"
-                                                            >
-                                                                <Trash2 className="h-3.5 w-3.5" />
-                                                            </button>
-                                                        </div>
-                                                    ) : row.invoiceUrl ? (
-                                                        <Link href={row.invoiceUrl} className="flex h-7 w-7 items-center justify-center rounded-md border border-border hover:bg-muted transition-colors">
-                                                            <Printer className="h-3.5 w-3.5" />
-                                                        </Link>
-                                                    ) : (
-                                                        <span className="text-muted-foreground">-</span>
-                                                    )}
-                                                </td>
-                                            </tr>
-                                        );
-                                    })}
-                                    <tr className="bg-muted/20 font-semibold">
-                                        <td colSpan={4} className="px-3 py-2">Totals</td>
-                                        <td className="px-3 py-2 text-right">{formatCurrency(totals.cashIssued)}</td>
-                                        <td className="px-3 py-2 text-right">{formatCurrency(totals.cashReceipt)}</td>
-                                        <td className="px-3 py-2">-</td>
-                                        <td className="px-3 py-2 font-mono">{formatCurrency(totals.cashReceipt - totals.cashIssued)}</td>
-                                        <td className="px-3 py-2 font-mono">{formatWeight(totals.goldReceipt - totals.goldIssued)}</td>
-                                        <td className="px-3 py-2">-</td>
-                                        <td className="px-3 py-2">-</td>
+                        ) : (
+                            <>
+                                {dt.data.map((row) => (
+                                    <tr key={`${row.source}-${row.id}`} className="table-row-hover">
+                                        <td className="px-3 py-2 whitespace-nowrap text-muted-foreground">{formatDate(row.date)}</td>
+                                        <td className="px-3 py-2 font-mono">{row.particulars}</td>
+                                        <td className="px-3 py-2">{row.source}</td>
+                                        <td className="px-3 py-2">{row.type}</td>
+                                        <td className="px-3 py-2 text-right font-mono">{row.cashIssued ? formatCurrency(row.cashIssued) : row.goldIssued ? formatWeight(row.goldIssued) : "-"}</td>
+                                        <td className="px-3 py-2 text-right font-mono">{row.cashReceipt ? formatCurrency(row.cashReceipt) : row.goldReceipt ? formatWeight(row.goldReceipt) : "-"}</td>
+                                        <td className="px-3 py-2 font-mono font-semibold">{row.drcr}</td>
+                                        <td className="px-3 py-2 font-mono font-semibold">{formatCurrency(row.runningCash)}</td>
+                                        <td className="px-3 py-2 font-mono font-semibold">{formatWeight(row.runningGold)}</td>
+                                        <td className="px-3 py-2 text-muted-foreground max-w-[160px] truncate">{row.notes || "—"}</td>
+                                        <td className="px-3 py-2">
+                                            {row.source === "GoldLedger" ? (
+                                                <div className="flex items-center gap-1">
+                                                    <button
+                                                        onClick={() => {
+                                                            const entry = goldLedgerEntries.find((e) => e.id === row.id);
+                                                            if (entry) editLedgerEntry(entry);
+                                                        }}
+                                                        className="flex h-7 w-7 items-center justify-center rounded-md border border-border hover:bg-muted transition-colors"
+                                                        title="Edit"
+                                                    >
+                                                        <Pencil className="h-3.5 w-3.5" />
+                                                    </button>
+                                                    <button
+                                                        onClick={() => deleteLedgerEntry(row.id)}
+                                                        className="flex h-7 w-7 items-center justify-center rounded-md border border-border hover:bg-destructive/10 hover:text-destructive transition-colors"
+                                                        title="Delete"
+                                                    >
+                                                        <Trash2 className="h-3.5 w-3.5" />
+                                                    </button>
+                                                </div>
+                                            ) : row.invoiceUrl ? (
+                                                <Link href={row.invoiceUrl} className="flex h-7 w-7 items-center justify-center rounded-md border border-border hover:bg-muted transition-colors">
+                                                    <Printer className="h-3.5 w-3.5" />
+                                                </Link>
+                                            ) : (
+                                                <span className="text-muted-foreground">-</span>
+                                            )}
+                                        </td>
                                     </tr>
-                                </>
-                            );
-                        })()}
+                                ))}
+                                <tr className="bg-muted/20 font-semibold">
+                                    <td colSpan={4} className="px-3 py-2">Totals</td>
+                                    <td className="px-3 py-2 text-right">{formatCurrency(totals.cashIssued)}</td>
+                                    <td className="px-3 py-2 text-right">{formatCurrency(totals.cashReceipt)}</td>
+                                    <td className="px-3 py-2">-</td>
+                                    <td className="px-3 py-2 font-mono">{formatCurrency(totals.cashReceipt - totals.cashIssued)}</td>
+                                    <td className="px-3 py-2 font-mono">{formatWeight(totals.goldReceipt - totals.goldIssued)}</td>
+                                    <td className="px-3 py-2">-</td>
+                                    <td className="px-3 py-2">-</td>
+                                </tr>
+                            </>
+                        )}
                     </tbody>
                 </table>
             </div>
+            <DataTableFooter currentPage={dt.currentPage} totalPages={dt.totalPages} totalItems={dt.totalItems} from={dt.from} to={dt.to} onPageChange={dt.setCurrentPage} />
 
             {showAddLedger && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">

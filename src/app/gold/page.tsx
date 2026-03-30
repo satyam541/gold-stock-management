@@ -11,6 +11,8 @@ import { GoldTransaction, GoldInventory, Person } from "@/types";
 import PersonCombobox from "@/components/ui/PersonCombobox";
 import { useDynamicOptions } from "@/hooks/useDynamicOptions";
 import toast from "react-hot-toast";
+import { useDataTable } from "@/hooks/useDataTable";
+import { DataTableHeader, DataTableFooter } from "@/components/ui/DataTableControls";
 
 interface FormData {
     personId: string;
@@ -51,6 +53,7 @@ export default function GoldPage() {
         setLoading(true);
         try {
             const params = new URLSearchParams();
+            params.set("limit", "10000");
             if (filterCarat) params.set("carat", filterCarat);
             if (filterPerson) params.set("personId", filterPerson);
 
@@ -114,6 +117,13 @@ export default function GoldPage() {
             ? parseFloat(form.ratePerGram) * parseFloat(form.weight)
             : null;
 
+    const dt = useDataTable(transactions, {
+        searchFn: (tx, q) => {
+            const s = [tx.person?.name, tx.billNumber, tx.type, tx.carat, tx.notes, tx.weight?.toString(), tx.ratePerGram?.toString()].filter(Boolean).join(" ").toLowerCase();
+            return s.includes(q);
+        },
+    });
+
     return (
         <div className="space-y-6">
             {/* Inventory Cards */}
@@ -166,6 +176,7 @@ export default function GoldPage() {
 
             {/* Table */}
             <div className="rounded-xl border border-border bg-card overflow-hidden">
+                <DataTableHeader search={dt.search} onSearchChange={dt.setSearch} pageSize={dt.pageSize} onPageSizeChange={dt.setPageSize} />
                 <div className="overflow-x-auto">
                     <table className="w-full">
                         <thead>
@@ -185,7 +196,7 @@ export default function GoldPage() {
                                         <button onClick={() => { setForm(emptyForm()); setShowModal(true); }} className="mt-2 text-sm text-primary hover:underline">Record your first gold transaction →</button>
                                     </td>
                                 </tr>
-                            ) : transactions.map((tx) => (
+                            ) : dt.data.map((tx) => (
                                 <tr key={tx.id} className="table-row-hover">
                                     <td className="px-4 py-3"><span className="font-mono text-xs text-muted-foreground">{tx.billNumber?.slice(-8)}</span></td>
                                     <td className="px-4 py-3">
@@ -216,6 +227,7 @@ export default function GoldPage() {
                         </tbody>
                     </table>
                 </div>
+                <DataTableFooter currentPage={dt.currentPage} totalPages={dt.totalPages} totalItems={dt.totalItems} from={dt.from} to={dt.to} onPageChange={dt.setCurrentPage} />
             </div>
 
             {/* ── New Gold Transaction Modal ── */}

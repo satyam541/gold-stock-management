@@ -11,6 +11,8 @@ import { cn } from "@/lib/utils";
 import { CashTransaction, Person } from "@/types";
 import PersonCombobox from "@/components/ui/PersonCombobox";
 import toast from "react-hot-toast";
+import { useDataTable } from "@/hooks/useDataTable";
+import { DataTableHeader, DataTableFooter } from "@/components/ui/DataTableControls";
 
 interface FormData {
     personId: string;
@@ -56,6 +58,7 @@ export default function CashPage() {
         setLoading(true);
         try {
             const params = new URLSearchParams();
+            params.set("limit", "10000");
             if (filterType) params.set("type", filterType);
             if (filterPerson) params.set("personId", filterPerson);
 
@@ -149,6 +152,13 @@ export default function CashPage() {
     const totalLent = transactions.filter((t) => t.type === "LENT" || t.type === "WITHDRAWAL").reduce((s, t) => s + t.amount, 0);
     const totalReceived = transactions.filter((t) => t.type === "RECEIVED" || t.type === "DEPOSIT").reduce((s, t) => s + t.amount, 0);
 
+    const dt = useDataTable(transactions, {
+        searchFn: (tx, q) => {
+            const s = [tx.person?.name, tx.billNumber, tx.type, tx.notes, tx.amount?.toString()].filter(Boolean).join(" ").toLowerCase();
+            return s.includes(q);
+        },
+    });
+
     return (
         <div className="space-y-6">
             {/* Stats */}
@@ -240,6 +250,7 @@ export default function CashPage() {
 
             {/* Table */}
             <div className="rounded-xl border border-border bg-card overflow-hidden">
+                <DataTableHeader search={dt.search} onSearchChange={dt.setSearch} pageSize={dt.pageSize} onPageSizeChange={dt.setPageSize} />
                 <div className="overflow-x-auto">
                     <table className="w-full">
                         <thead>
@@ -259,7 +270,7 @@ export default function CashPage() {
                                         <button onClick={() => { setForm(emptyForm()); setShowModal(true); }} className="mt-2 text-sm text-primary hover:underline">Record your first transaction →</button>
                                     </td>
                                 </tr>
-                            ) : transactions.map((tx) => (
+                            ) : dt.data.map((tx) => (
                                 <tr key={tx.id} className="table-row-hover">
                                     <td className="px-4 py-3"><span className="font-mono text-xs text-muted-foreground">{tx.billNumber?.slice(-8)}</span></td>
                                     <td className="px-4 py-3">
@@ -285,6 +296,7 @@ export default function CashPage() {
                         </tbody>
                     </table>
                 </div>
+                <DataTableFooter currentPage={dt.currentPage} totalPages={dt.totalPages} totalItems={dt.totalItems} from={dt.from} to={dt.to} onPageChange={dt.setCurrentPage} />
             </div>
 
             {/* ── New Transaction Modal ── */}

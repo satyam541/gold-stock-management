@@ -9,6 +9,8 @@ import {
 } from "@/lib/utils";
 import { CashTransaction, GoldTransaction, Person } from "@/types";
 import { useDynamicOptions } from "@/hooks/useDynamicOptions";
+import { useDataTable } from "@/hooks/useDataTable";
+import { DataTableHeader, DataTableFooter } from "@/components/ui/DataTableControls";
 
 type TabType = "cash" | "gold";
 
@@ -39,8 +41,8 @@ export default function TransactionsPage() {
             if (filterTo) { cashParams.set("to", filterTo); goldParams.set("to", filterTo); }
 
             const [cashRes, goldRes, personRes] = await Promise.all([
-                fetch(`/api/cash-transactions?${cashParams}&limit=50`),
-                fetch(`/api/gold-transactions?${goldParams}&limit=50`),
+                fetch(`/api/cash-transactions?${cashParams}&limit=10000`),
+                fetch(`/api/gold-transactions?${goldParams}&limit=10000`),
                 fetch("/api/persons"),
             ]);
             const cData = await cashRes.json();
@@ -61,6 +63,22 @@ export default function TransactionsPage() {
     const clearFilters = () => {
         setFilterPerson(""); setFilterType(""); setFilterCarat(""); setFilterFrom(""); setFilterTo("");
     };
+
+    const cashDt = useDataTable(cashTx, {
+        searchFn: (tx, q) => {
+            const s = [tx.person?.name, tx.billNumber, tx.type, tx.notes, tx.amount?.toString()].filter(Boolean).join(" ").toLowerCase();
+            return s.includes(q);
+        },
+    });
+
+    const goldDt = useDataTable(goldTx, {
+        searchFn: (tx, q) => {
+            const s = [tx.person?.name, tx.billNumber, tx.type, tx.carat, tx.notes, tx.weight?.toString(), tx.ratePerGram?.toString()].filter(Boolean).join(" ").toLowerCase();
+            return s.includes(q);
+        },
+    });
+
+    const activeDt = tab === "cash" ? cashDt : goldDt;
 
     return (
         <div className="space-y-6">
@@ -125,6 +143,7 @@ export default function TransactionsPage() {
 
             {/* Table */}
             <div className="rounded-xl border border-border bg-card overflow-hidden">
+                <DataTableHeader search={activeDt.search} onSearchChange={activeDt.setSearch} pageSize={activeDt.pageSize} onPageSizeChange={activeDt.setPageSize} />
                 <div className="overflow-x-auto">
                     <table className="w-full">
                         <thead>
@@ -145,7 +164,7 @@ export default function TransactionsPage() {
                             ) : tab === "cash" ? (
                                 cashTx.length === 0 ? (
                                     <tr><td colSpan={7} className="px-4 py-12 text-center text-sm text-muted-foreground">No cash transactions found</td></tr>
-                                ) : cashTx.map((tx) => (
+                                ) : cashDt.data.map((tx) => (
                                     <tr key={tx.id} className="table-row-hover">
                                         <td className="px-4 py-3 font-mono text-xs text-muted-foreground">{tx.billNumber?.slice(-8)}</td>
                                         <td className="px-4 py-3">
@@ -166,7 +185,7 @@ export default function TransactionsPage() {
                             ) : (
                                 goldTx.length === 0 ? (
                                     <tr><td colSpan={10} className="px-4 py-12 text-center text-sm text-muted-foreground">No gold transactions found</td></tr>
-                                ) : goldTx.map((tx) => (
+                                ) : goldDt.data.map((tx) => (
                                     <tr key={tx.id} className="table-row-hover">
                                         <td className="px-4 py-3 font-mono text-xs text-muted-foreground">{tx.billNumber?.slice(-8)}</td>
                                         <td className="px-4 py-3">
@@ -193,6 +212,7 @@ export default function TransactionsPage() {
                         </tbody>
                     </table>
                 </div>
+                <DataTableFooter currentPage={activeDt.currentPage} totalPages={activeDt.totalPages} totalItems={activeDt.totalItems} from={activeDt.from} to={activeDt.to} onPageChange={activeDt.setCurrentPage} />
             </div>
         </div>
     );
