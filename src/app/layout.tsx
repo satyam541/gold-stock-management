@@ -1,9 +1,22 @@
 import type { Metadata } from "next";
+import { Poppins, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import NavigationProgress from "@/components/ui/NavigationProgress";
 import { Toaster } from "react-hot-toast";
 import AuthProvider from "@/components/providers/AuthProvider";
 import AppShell from "@/components/layout/AppShell";
+
+const poppins = Poppins({
+    subsets: ["latin"],
+    variable: "--font-outfit",
+    weight: ["300", "400", "500", "600", "700"],
+});
+
+const jetbrains = JetBrains_Mono({
+    subsets: ["latin"],
+    variable: "--font-jetbrains",
+    weight: ["400", "500"],
+});
 
 export const metadata: Metadata = {
     title: "AssetFlow - Stock & Asset Management",
@@ -17,7 +30,7 @@ export default function RootLayout({
 }) {
     return (
         <html lang="en" suppressHydrationWarning>
-            <body className="antialiased">
+            <body className={`${poppins.variable} ${jetbrains.variable} antialiased`}>
                 <AuthProvider>
                     <NavigationProgress />
                     <Toaster

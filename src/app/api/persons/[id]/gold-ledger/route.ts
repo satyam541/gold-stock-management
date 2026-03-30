@@ -71,3 +71,32 @@ export async function POST(
     );
   }
 }
+
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: { id: string } },
+) {
+  try {
+    const { searchParams } = new URL(request.url);
+    const entryId = searchParams.get("entryId");
+
+    if (!entryId) {
+      return NextResponse.json(
+        { error: "entryId query parameter is required" },
+        { status: 400 },
+      );
+    }
+
+    await prisma.goldLedgerEntry.delete({
+      where: { id: entryId, personId: params.id },
+    });
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error("Gold ledger delete error:", error);
+    return NextResponse.json(
+      { error: "Failed to delete entry" },
+      { status: 500 },
+    );
+  }
+}

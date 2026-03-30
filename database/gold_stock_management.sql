@@ -130,6 +130,34 @@ insert  into `gold_inventory`(`id`,`carat`,`weight`,`updatedAt`) values
 ('cmnbxbl4v0014v6fucyaif3ub','24k',0,'2026-03-29 15:38:19.712'),
 ('cmnbxbl4x0015v6fuw8fu1igi','18k',75,'2026-03-29 15:38:19.713');
 
+/*Table structure for table `gold_ledger_entries` */
+
+DROP TABLE IF EXISTS `gold_ledger_entries`;
+
+CREATE TABLE `gold_ledger_entries` (
+  `id` varchar(191) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `personId` varchar(191) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `type` enum('GIVEN','RECEIVED','PURCHASE','SALE') COLLATE utf8mb4_unicode_ci NOT NULL,
+  `grossWeight` double NOT NULL,
+  `purity` double NOT NULL,
+  `wastagePercent` double NOT NULL DEFAULT '0',
+  `pureGoldWeight` double NOT NULL,
+  `wastageWeight` double NOT NULL,
+  `finalWeight` double NOT NULL,
+  `goldRate` double NOT NULL,
+  `totalAmount` double NOT NULL,
+  `notes` varchar(191) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `date` datetime(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+  `createdAt` datetime(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+  PRIMARY KEY (`id`),
+  KEY `gold_ledger_entries_personId_fkey` (`personId`)
+) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+/*Data for the table `gold_ledger_entries` */
+
+insert  into `gold_ledger_entries`(`id`,`personId`,`type`,`grossWeight`,`purity`,`wastagePercent`,`pureGoldWeight`,`wastageWeight`,`finalWeight`,`goldRate`,`totalAmount`,`notes`,`date`,`createdAt`) values 
+('cmndag0qu0003fh1edrcu039q','cmnbxbkyv000dv6fubc0e4gtt','RECEIVED',200,95,0,190,0,190,8500,1615000,NULL,'2026-03-30 00:00:00.000','2026-03-30 14:33:27.749');
+
 /*Table structure for table `gold_transactions` */
 
 DROP TABLE IF EXISTS `gold_transactions`;
