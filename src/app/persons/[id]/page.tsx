@@ -165,12 +165,19 @@ export default function PersonDetailPage() {
     if (loading) return <div className="flex items-center justify-center h-64 text-muted-foreground">Loading...</div>;
     if (!person) return <div className="text-muted-foreground p-4">Person not found.</div>;
 
-    const totalCash = person.cashTransactions.reduce((sum, t) => {
-        return t.type === "RECEIVED" || t.type === "DEPOSIT" ? sum + t.amount : sum - t.amount;
-    }, 0);
-    const totalGold = person.goldTransactions.reduce((sum, t) => {
-        return t.type === "RECEIVED" || t.type === "DEPOSIT" ? sum + t.weight : sum - t.weight;
-    }, 0);
+    const totals = combinedEntries.reduce(
+        (acc, row) => {
+            acc.cashIssued += row.cashIssued;
+            acc.cashReceipt += row.cashReceipt;
+            acc.goldIssued += row.goldIssued;
+            acc.goldReceipt += row.goldReceipt;
+            return acc;
+        },
+        { cashIssued: 0, cashReceipt: 0, goldIssued: 0, goldReceipt: 0 }
+    );
+
+    const totalCash = totals.cashReceipt - totals.cashIssued;
+    const totalGold = totals.goldReceipt - totals.goldIssued;
 
     const ledgerCalc = (() => {
         const gross = Number(ledgerForm.grossWeight) || 0;
@@ -192,17 +199,6 @@ export default function PersonDetailPage() {
             rate,
         };
     })();
-
-    const totals = combinedEntries.reduce(
-        (acc, row) => {
-            acc.cashIssued += row.cashIssued;
-            acc.cashReceipt += row.cashReceipt;
-            acc.goldIssued += row.goldIssued;
-            acc.goldReceipt += row.goldReceipt;
-            return acc;
-        },
-        { cashIssued: 0, cashReceipt: 0, goldIssued: 0, goldReceipt: 0 }
-    );
 
     const createLedgerEntry = async () => {
         setLedgerError("");
