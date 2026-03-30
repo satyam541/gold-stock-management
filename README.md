@@ -18,15 +18,15 @@ A full-stack web application for managing cash flow and gold inventory, built wi
 
 ## Tech Stack
 
-| Layer | Technology |
-|---|---|
-| Frontend | Next.js 14 (App Router), TypeScript |
-| Styling | TailwindCSS, custom design tokens |
-| Charts | Recharts |
-| Database ORM | Prisma |
-| Database | PostgreSQL |
-| Print | react-to-print |
-| Fonts | Outfit, Playfair Display, JetBrains Mono |
+| Layer        | Technology                               |
+| ------------ | ---------------------------------------- |
+| Frontend     | Next.js 14 (App Router), TypeScript      |
+| Styling      | TailwindCSS, custom design tokens        |
+| Charts       | Recharts                                 |
+| Database ORM | Prisma                                   |
+| Database     | PostgreSQL                               |
+| Print        | react-to-print                           |
+| Fonts        | Outfit, Playfair Display, JetBrains Mono |
 
 ---
 
@@ -133,11 +133,13 @@ cp .env.example .env
 Edit `.env` and set your `DATABASE_URL`:
 
 **Local PostgreSQL:**
+
 ```env
 DATABASE_URL="postgresql://postgres:yourpassword@localhost:5432/assetflow"
 ```
 
 **Supabase (free cloud DB):**
+
 1. Go to https://supabase.com → New Project
 2. Settings → Database → Connection String (URI mode)
 3. Paste it as `DATABASE_URL`
@@ -209,36 +211,38 @@ CMD ["npm", "start"]
 
 ## API Reference
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/dashboard` | Dashboard stats + charts data |
-| GET/POST | `/api/persons` | List / create persons |
-| GET/PUT/DELETE | `/api/persons/:id` | Person CRUD |
-| GET/PUT | `/api/cash-ledger` | Get/set cash balance |
-| GET/POST | `/api/cash-transactions` | List / create cash tx |
-| GET/DELETE | `/api/cash-transactions/:id` | Get / delete cash tx |
-| GET/POST | `/api/gold-transactions` | List / create gold tx |
-| GET/DELETE | `/api/gold-transactions/:id` | Get / delete gold tx |
-| GET | `/api/gold-inventory` | Gold inventory by carat |
+| Method         | Endpoint                     | Description                   |
+| -------------- | ---------------------------- | ----------------------------- |
+| GET            | `/api/dashboard`             | Dashboard stats + charts data |
+| GET/POST       | `/api/persons`               | List / create persons         |
+| GET/PUT/DELETE | `/api/persons/:id`           | Person CRUD                   |
+| GET/PUT        | `/api/cash-ledger`           | Get/set cash balance          |
+| GET/POST       | `/api/cash-transactions`     | List / create cash tx         |
+| GET/DELETE     | `/api/cash-transactions/:id` | Get / delete cash tx          |
+| GET/POST       | `/api/gold-transactions`     | List / create gold tx         |
+| GET/DELETE     | `/api/gold-transactions/:id` | Get / delete gold tx          |
+| GET            | `/api/gold-inventory`        | Gold inventory by carat       |
 
 ### Query Parameters (Transactions)
 
-| Param | Description |
-|-------|-------------|
-| `personId` | Filter by person ID |
-| `type` | LENT, RECEIVED, DEPOSIT, WITHDRAWAL |
-| `carat` | Gold carat (22k, 24k, etc.) |
-| `from` | Start date (ISO) |
-| `to` | End date (ISO) |
-| `page` | Page number (default: 1) |
-| `limit` | Items per page (default: 20) |
+| Param      | Description                         |
+| ---------- | ----------------------------------- |
+| `personId` | Filter by person ID                 |
+| `type`     | LENT, RECEIVED, DEPOSIT, WITHDRAWAL |
+| `carat`    | Gold carat (22k, 24k, etc.)         |
+| `from`     | Start date (ISO)                    |
+| `to`       | End date (ISO)                      |
+| `page`     | Page number (default: 1)            |
+| `limit`    | Items per page (default: 20)        |
 
 ---
 
 ## Customization
 
 ### Company Info (Bill Printing)
+
 Edit in `src/app/bill/[id]/page.tsx`:
+
 ```typescript
 const COMPANY = {
   name: "Your Business Name",
@@ -249,14 +253,17 @@ const COMPANY = {
 ```
 
 ### Currency
+
 Edit `formatCurrency` in `src/lib/utils.ts`:
+
 ```typescript
-export function formatCurrency(amount: number, currency = "PKR"): string {
-  // Change "PKR" to "USD", "AED", "INR", etc.
+export function formatCurrency(amount: number, currency = "INR"): string {
+  // Change "INR" to "USD", "AED", "INR", etc.
 }
 ```
 
 ### Adding Carat Types
+
 Edit `CARAT_OPTIONS` in `src/lib/utils.ts`.
 
 ---

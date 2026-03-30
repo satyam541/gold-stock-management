@@ -6,7 +6,7 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-export function formatCurrency(amount: number, currency = "PKR"): string {
+export function formatCurrency(amount: number, currency = "INR"): string {
   return new Intl.NumberFormat("en-PK", {
     style: "currency",
     currency,
@@ -92,7 +92,7 @@ const BADGE_MAP: Record<string, string> = {
 
 export function getTransactionBadgeClassDynamic(
   type: string,
-  transactionTypes: { value: string; color: string }[]
+  transactionTypes: { value: string; color: string }[],
 ): string {
   // Check built-in badges first
   if (BADGE_MAP[type]) return BADGE_MAP[type];
@@ -102,7 +102,7 @@ export function getTransactionBadgeClassDynamic(
 
 export function getTransactionColor(
   type: string,
-  transactionTypes: { value: string; color: string }[]
+  transactionTypes: { value: string; color: string }[],
 ): string {
   const found = transactionTypes.find((t) => t.value === type);
   return found?.color || "#6b7280";
@@ -110,7 +110,7 @@ export function getTransactionColor(
 
 export function getTransactionLabelDynamic(
   type: string,
-  transactionTypes: { value: string; label: string }[]
+  transactionTypes: { value: string; label: string }[],
 ): string {
   const found = transactionTypes.find((t) => t.value === type);
   return found?.label || type;

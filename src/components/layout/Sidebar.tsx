@@ -47,9 +47,7 @@ export default function Sidebar() {
                     <TrendingUp className="h-5 w-5 text-white" />
                 </div>
                 <div>
-                    <h1 className="font-display text-base font-bold leading-tight gold-text">
-                        AssetFlow
-                    </h1>
+                    <h1 className="font-display text-base font-bold leading-tight gold-text">AssetFlow</h1>
                     <p className="text-[10px] text-muted-foreground">Management Suite</p>
                 </div>
             </div>
@@ -106,9 +104,7 @@ export default function Sidebar() {
                     </div>
                     <div className="min-w-0 flex-1">
                         <p className="truncate text-sm font-medium">{userName}</p>
-                        <p className="truncate text-xs text-muted-foreground">
-                            {userRole}
-                        </p>
+                        <p className="truncate text-xs text-muted-foreground">{userRole}</p>
                     </div>
                     <button
                         onClick={() => signOut({ callbackUrl: "/login" })}

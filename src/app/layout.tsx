@@ -1,27 +1,9 @@
 import type { Metadata } from "next";
-import { Outfit, Playfair_Display, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import NavigationProgress from "@/components/ui/NavigationProgress";
 import { Toaster } from "react-hot-toast";
 import AuthProvider from "@/components/providers/AuthProvider";
 import AppShell from "@/components/layout/AppShell";
-
-const outfit = Outfit({
-    subsets: ["latin"],
-    variable: "--font-outfit",
-});
-
-const playfair = Playfair_Display({
-    subsets: ["latin"],
-    variable: "--font-playfair",
-    weight: ["600", "700"],
-});
-
-const jetbrains = JetBrains_Mono({
-    subsets: ["latin"],
-    variable: "--font-jetbrains",
-    weight: ["400", "500"],
-});
 
 export const metadata: Metadata = {
     title: "AssetFlow - Stock & Asset Management",
@@ -35,9 +17,7 @@ export default function RootLayout({
 }) {
     return (
         <html lang="en" suppressHydrationWarning>
-            <body
-                className={`${outfit.variable} ${playfair.variable} ${jetbrains.variable} antialiased`}
-            >
+            <body className="antialiased">
                 <AuthProvider>
                     <NavigationProgress />
                     <Toaster

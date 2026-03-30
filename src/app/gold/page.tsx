@@ -261,7 +261,7 @@ export default function GoldPage() {
                             </div>
 
                             <div>
-                                <label className="block text-xs font-medium text-muted-foreground mb-1.5">Rate per gram (PKR) <span className="text-muted-foreground font-normal">(optional)</span></label>
+                                <label className="block text-xs font-medium text-muted-foreground mb-1.5">Rate per gram (INR) <span className="text-muted-foreground font-normal">(optional)</span></label>
                                 <input type="number" min="0" value={form.ratePerGram} onChange={(e) => setForm({ ...form, ratePerGram: e.target.value })} placeholder="e.g. 8500" className="w-full h-9 rounded-lg border border-border bg-muted/30 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
                             </div>
 

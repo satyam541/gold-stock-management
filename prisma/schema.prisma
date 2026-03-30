@@ -18,6 +18,7 @@ model Person {
     updatedAt        DateTime          @updatedAt
     cashTransactions CashTransaction[]
     goldTransactions GoldTransaction[]
+    goldLedgerEntries GoldLedgerEntry[]
 
     @@map("persons")
 }
@@ -78,6 +79,35 @@ model GoldTransaction {
     @@index([carat])
     @@index([date])
     @@map("gold_transactions")
+}
+
+// ADDED
+model GoldLedgerEntry {
+  id             String   @id @default(cuid())
+  personId       String
+  person         Person   @relation(fields: [personId], references: [id], onDelete: Cascade)
+  type           GoldLedgerType
+  grossWeight    Float
+  purity         Float
+  wastagePercent Float    @default(0)
+  pureGoldWeight Float
+  wastageWeight  Float
+  finalWeight    Float
+  goldRate       Float
+  totalAmount    Float
+  notes          String?
+  date           DateTime @default(now())
+  createdAt      DateTime @default(now())
+
+  @@map("gold_ledger_entries")
+}
+
+// ADDED
+enum GoldLedgerType {
+  GIVEN
+  RECEIVED
+  PURCHASE
+  SALE
 }
 
 // ─── Authentication ──────────────────────────────────────────────
